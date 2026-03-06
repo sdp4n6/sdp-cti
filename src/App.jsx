@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Sidebar                from "./components/Sidebar.jsx";
 import Topbar                 from "./components/Topbar.jsx";
-//import InvestigationsPage     from "./components/InvestigationsPage.jsx";
+import InvestigationsPage     from "./components/InvestigationsPage.jsx";
 import InvestigationWorkspace from "./components/InvestigationWorkspace.jsx";
 import DashboardPage from "./components/Dashboard.jsx";
 
