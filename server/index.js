@@ -7,6 +7,8 @@ dotenv.config()
 
 // --- Import Routes ---
 import investigationsRouter from "./routes/investigations.js"
+import workspaceRouter  from "./routes/workspaces.js"
+import { errorHandler, notFound } from "./middleware/errorHandler.js"
 
 const app = express()
 const PORT = process.env.PORT || 5001
@@ -32,6 +34,11 @@ app.get("/api/health", (req, res) => {
 
 // --- ROUTES ---
 app.use("/api/investigations", investigationsRouter)
+app.use("/api/investigations/:id/workspace", workspaceRouter)
+
+// --- Error handling ---
+app.use(notFound)
+app.use(errorHandler)
 
 // --- START --- 
 app.listen(PORT, () => {
