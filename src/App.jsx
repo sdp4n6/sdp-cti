@@ -3,7 +3,11 @@ import Sidebar                from "./components/Sidebar.jsx";
 import Topbar                 from "./components/Topbar.jsx";
 import InvestigationsPage     from "./components/InvestigationsPage.jsx";
 import InvestigationWorkspace from "./components/InvestigationWorkspace.jsx";
-import DashboardPage from "./components/Dashboard.jsx";
+import DashboardPage          from "./components/Dashboard.jsx";
+import ThreatActorsPage       from "./components/ThreatActorsPage.jsx";
+import MalwarePage            from "./components/MalwarePage.jsx";
+import IOCsPage               from "./components/IOCsPage.jsx";
+import DetectionsPage         from "./components/DetectionsPage.jsx";
 
 import { CSS_VARS }           from "./data/constants.js";
 
@@ -331,8 +335,54 @@ const WORKSPACE_CSS = `
   .import-success-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--text-primary); }
   .import-success-sub { font-size: 12.5px; color: var(--text-muted); }
 
-  
+  /* TTP dropdown */
+  .ttp-dropdown { position: absolute; top: 100%; left: 0; right: 0; z-index: 50; max-height: 340px; overflow-y: auto; background: var(--bg-panel); border: 1px solid var(--border-lit); border-radius: var(--radius); box-shadow: 0 12px 40px rgba(0,0,0,0.5); margin-top: 4px; }
+  .ttp-dropdown-tactic { font-family: var(--font-mono); font-size: 9px; color: #818cf8; text-transform: uppercase; letter-spacing: 0.1em; padding: 8px 12px 4px; background: var(--bg-surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1; }
+  .ttp-dropdown-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; transition: background var(--transition); }
+  .ttp-dropdown-item:hover { background: var(--accent-dim); }
+  .ttp-dropdown-id { font-family: var(--font-mono); font-size: 10px; color: var(--accent); min-width: 72px; flex-shrink: 0; }
+  .ttp-dropdown-name { font-size: 12px; color: var(--text-primary); }
+  .ttp-dropdown-more { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); padding: 6px 12px; text-align: center; }
+  .ttp-selected-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--accent-glow); border: 1px solid var(--border-lit); border-radius: var(--radius); font-size: 12.5px; color: var(--text-primary); }
+  .ttp-tactic-group { display: flex; flex-direction: column; gap: 6px; }
+  .ttp-tactic-header { display: flex; align-items: center; gap: 8px; }
+  .ttp-tactic-count { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+
+  /* Library pages */
+  .lib-page { flex: 1; overflow-y: auto; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; }
+  .lib-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .lib-search { display: flex; align-items: center; gap: 8px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 0 12px; flex: 1; max-width: 400px; transition: border-color var(--transition); }
+  .lib-search:focus-within { border-color: var(--border-lit); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .lib-search-input { flex: 1; background: transparent; border: none; outline: none; color: var(--text-primary); font-family: var(--font-ui); font-size: 12.5px; padding: 9px 0; }
+  .lib-search-input::placeholder { color: var(--text-muted); }
+  .lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; }
+  .lib-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; transition: all var(--transition); }
+  .lib-card:hover { border-color: rgba(255,255,255,0.1); }
+  .lib-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .lib-card-name { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .lib-card-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+  .lib-card-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .lib-card-aliases { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+  .lib-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .lib-stat { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+  .lib-badge { font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 3px; border: 1px solid; white-space: nowrap; }
+  .lib-badge--origin { color: #f0abfc; background: rgba(240,171,252,0.1); border-color: rgba(240,171,252,0.25); }
+  .lib-badge--motivation { color: #facc15; background: rgba(250,204,21,0.1); border-color: rgba(250,204,21,0.25); }
+  .lib-badge--type { color: #fb923c; background: rgba(251,146,60,0.1); border-color: rgba(251,146,60,0.25); }
+  .lib-badge--custom { color: #34d399; background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.25); }
+  .lib-badge--tracked { color: var(--text-muted); background: var(--bg-hover); border-color: var(--border); }
+  .lib-count-strip { display: flex; gap: 8px; flex-wrap: wrap; }
+  .lib-count-chip { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; }
+
+  /* Actor/Malware picker in investigation sections */
+  .picker-dropdown { position: absolute; top: 100%; left: 0; right: 0; z-index: 50; max-height: 260px; overflow-y: auto; background: var(--bg-panel); border: 1px solid var(--border-lit); border-radius: var(--radius); box-shadow: 0 12px 40px rgba(0,0,0,0.5); margin-top: 4px; }
+  .picker-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; cursor: pointer; transition: background var(--transition); }
+  .picker-item:hover { background: var(--accent-dim); }
+  .picker-item-name { font-size: 12.5px; font-weight: 500; color: var(--text-primary); }
+  .picker-item-meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+  .picker-divider { font-family: var(--font-mono); font-size: 9px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; padding: 6px 12px; background: var(--bg-surface); border-bottom: 1px solid var(--border); }
 `;
+
 
 function App() {
   const [collapsed,   setCollapsed]   = useState(false);
@@ -360,6 +410,14 @@ function App() {
             <DashboardPage onOpenInvestigation={setOpenedInv} />
           ) : active === "investigations" ? (
             <InvestigationsPage onOpen={setOpenedInv} />
+          ) : active === "actors" ? (
+            <ThreatActorsPage />
+          ) : active === "malware" ? (
+            <MalwarePage />
+          ) : active === "iocs" ? (
+            <IOCsPage />
+          ) : active === "detections" ? (
+            <DetectionsPage />
           ) : (
             <main className="main-content">
               <div className="page-header">

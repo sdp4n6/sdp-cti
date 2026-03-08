@@ -7,7 +7,11 @@ dotenv.config()
 
 // --- Import Routes ---
 import investigationsRouter from "./routes/investigations.js"
-import workspaceRouter  from "./routes/workspaces.js"
+import workspaceRouter      from "./routes/workspaces.js"
+import threatActorsRouter   from "./routes/threat-actors.js"
+import malwareRouter        from "./routes/malware.js"
+import iocsRouter           from "./routes/iocs.js"
+import detectionsRouter     from "./routes/detections.js"
 import { errorHandler, notFound } from "./middleware/errorHandler.js"
 
 const app = express()
@@ -35,6 +39,10 @@ app.get("/api/health", (req, res) => {
 // --- ROUTES ---
 app.use("/api/investigations", investigationsRouter)
 app.use("/api/investigations/:id/workspace", workspaceRouter)
+app.use("/api/threat-actors", threatActorsRouter)
+app.use("/api/malware", malwareRouter)
+app.use("/api/iocs", iocsRouter)
+app.use("/api/detections", detectionsRouter)
 
 // --- Error handling ---
 app.use(notFound)

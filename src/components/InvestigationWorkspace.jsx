@@ -170,7 +170,7 @@ export default function InvestigationWorkspace({ investigation, onBack }) {
                         {activeTab === "malware"    && <MalwareSection data={ws.malware} onChange={updateSection("malware")} />}
                         {activeTab === "iocs"       && <IOCsSection data={ws.iocs} onChange={updateSection("iocs")} />}
                         {activeTab === "detections" && <DetectionsSection data={ws.detections} onChange={updateSection("detections")} />}
-                        {activeTab === "ttps" && <TTPsSection/>}
+                        {activeTab === "ttps" && <TTPsSection data={ws.ttps} onChange={updateSection("ttps")} />}
                         {activeTab === "report"     && <ReportSection inv={reportData} />}
                     </>
                 )}

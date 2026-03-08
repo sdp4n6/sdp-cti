@@ -31,4 +31,38 @@ export const api = {
         save:  (id, ws)      => request("PUT",   `/investigations/${id}/workspace`, ws),
         patch: (id, fields)  => request("PATCH", `/investigations/${id}/workspace`, fields),
     },
+
+    threatActors: {
+        list:   ()            => request("GET",    "/threat-actors"),
+        get:    (id)          => request("GET",    `/threat-actors/${id}`),
+        create: (payload)     => request("POST",   "/threat-actors", payload),
+        update: (id, payload) => request("PUT",    `/threat-actors/${id}`, payload),
+        delete: (id)          => request("DELETE", `/threat-actors/${id}`),
+        seed:   (actors)      => request("POST",   "/threat-actors/seed", { actors }),
+    },
+
+    malware: {
+        list:   ()            => request("GET",    "/malware"),
+        get:    (id)          => request("GET",    `/malware/${id}`),
+        create: (payload)     => request("POST",   "/malware", payload),
+        update: (id, payload) => request("PUT",    `/malware/${id}`, payload),
+        delete: (id)          => request("DELETE", `/malware/${id}`),
+        seed:   (malware)     => request("POST",   "/malware/seed", { malware }),
+    },
+
+    iocs: {
+        list:   ()            => request("GET",    "/iocs"),
+        get:    (id)          => request("GET",    `/iocs/${id}`),
+        create: (payload)     => request("POST",   "/iocs", payload),
+        update: (id, payload) => request("PUT",    `/iocs/${id}`, payload),
+        delete: (id)          => request("DELETE", `/iocs/${id}`),
+    },
+
+    detections: {
+        list:   ()            => request("GET",    "/detections"),
+        get:    (id)          => request("GET",    `/detections/${id}`),
+        create: (payload)     => request("POST",   "/detections", payload),
+        update: (id, payload) => request("PUT",    `/detections/${id}`, payload),
+        delete: (id)          => request("DELETE", `/detections/${id}`),
+    },
 }

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Crosshair, Plus, X, Copy, Check } from "lucide-react"
 import { IOC_TYPES } from "../../data/constants.js"
+import { api } from "../../utils/api.js"
 
 const EMPTY = () => ({ type: IOC_TYPES[0], value: "", context: "", tlp: "WHITE" })
 const TLP = ["WHITE","GREEN","AMBER","RED"]
@@ -14,6 +15,8 @@ export default function IOCsSection({ data, onChange }) {
 
     function add() {
         if (!form.value.trim()) return
+        // Sync to global IOC library
+        api.iocs.create({ ...form, source: "investigation" }).catch(() => {})
         onChange([...data, { ...form, id: Date.now() }])
         setForm(EMPTY())
         setOpen(false)

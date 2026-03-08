@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Radio, Plus, X, Copy, Check } from "lucide-react"
 import { DETECTION_PLATFORMS } from "../../data/constants.js"
+import { api } from "../../utils/api.js"
 
 const EMPTY = () => ({ platform: DETECTION_PLATFORMS[0], title: "", rule: "", notes: "" })
 
@@ -13,6 +14,8 @@ export default function DetectionsSection({ data, onChange }) {
 
     function add() {
         if (!form.title.trim()) return
+        // Sync to global detections library
+        api.detections.create(form).catch(() => {})
         onChange([...data, { ...form, id: Date.now() }])
         setForm(EMPTY())
         setOpen(false)

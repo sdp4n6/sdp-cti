@@ -50,6 +50,57 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_investigations_severity ON investigations(severity);
   CREATE INDEX IF NOT EXISTS idx_investigations_status   ON investigations(status);
   CREATE INDEX IF NOT EXISTS idx_investigations_type     ON investigations(type);
+
+  -- Library tables (global catalogs)
+  CREATE TABLE IF NOT EXISTS threat_actors_library (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    aliases     TEXT NOT NULL DEFAULT '',
+    origin      TEXT NOT NULL DEFAULT '',
+    motivation  TEXT NOT NULL DEFAULT '',
+    tracked_by  TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT '',
+    is_custom   INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS malware_library (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    family      TEXT NOT NULL DEFAULT '',
+    type        TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT '',
+    is_custom   INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS iocs_library (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    type        TEXT NOT NULL,
+    value       TEXT NOT NULL,
+    context     TEXT NOT NULL DEFAULT '',
+    tlp         TEXT NOT NULL DEFAULT 'WHITE',
+    source      TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS detections_library (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    platform    TEXT NOT NULL,
+    title       TEXT NOT NULL,
+    rule        TEXT NOT NULL DEFAULT '',
+    notes       TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_threat_actors_name ON threat_actors_library(name);
+  CREATE INDEX IF NOT EXISTS idx_malware_name ON malware_library(name);
+  CREATE INDEX IF NOT EXISTS idx_iocs_value ON iocs_library(value);
+  CREATE INDEX IF NOT EXISTS idx_detections_title ON detections_library(title);
 `)
 
 // -- Prepared Statements --
@@ -109,6 +160,61 @@ const stmts = {
       detections=excluded.detections,
       updated_at=excluded.updated_at
   `),
+  // Threat Actors Library
+  getAllThreatActors: db.prepare(`SELECT * FROM threat_actors_library ORDER BY name`),
+  getThreatActorById: db.prepare(`SELECT * FROM threat_actors_library WHERE id = ?`),
+  insertThreatActor: db.prepare(`
+    INSERT INTO threat_actors_library (name, aliases, origin, motivation, tracked_by, description, is_custom, created_at, updated_at)
+    VALUES (@name, @aliases, @origin, @motivation, @tracked_by, @description, @is_custom, @created_at, @updated_at)
+  `),
+  updateThreatActor: db.prepare(`
+    UPDATE threat_actors_library SET name=@name, aliases=@aliases, origin=@origin, motivation=@motivation,
+    tracked_by=@tracked_by, description=@description, updated_at=@updated_at WHERE id=@id
+  `),
+  deleteThreatActor: db.prepare(`DELETE FROM threat_actors_library WHERE id = ?`),
+  countThreatActors: db.prepare(`SELECT COUNT(*) as count FROM threat_actors_library`),
+
+  // Malware Library
+  getAllMalware: db.prepare(`SELECT * FROM malware_library ORDER BY name`),
+  getMalwareById: db.prepare(`SELECT * FROM malware_library WHERE id = ?`),
+  insertMalware: db.prepare(`
+    INSERT INTO malware_library (name, family, type, description, is_custom, created_at, updated_at)
+    VALUES (@name, @family, @type, @description, @is_custom, @created_at, @updated_at)
+  `),
+  updateMalware: db.prepare(`
+    UPDATE malware_library SET name=@name, family=@family, type=@type,
+    description=@description, updated_at=@updated_at WHERE id=@id
+  `),
+  deleteMalware: db.prepare(`DELETE FROM malware_library WHERE id = ?`),
+  countMalware: db.prepare(`SELECT COUNT(*) as count FROM malware_library`),
+
+  // IOCs Library
+  getAllIOCs: db.prepare(`SELECT * FROM iocs_library ORDER BY created_at DESC`),
+  getIOCById: db.prepare(`SELECT * FROM iocs_library WHERE id = ?`),
+  insertIOC: db.prepare(`
+    INSERT INTO iocs_library (type, value, context, tlp, source, created_at, updated_at)
+    VALUES (@type, @value, @context, @tlp, @source, @created_at, @updated_at)
+  `),
+  updateIOC: db.prepare(`
+    UPDATE iocs_library SET type=@type, value=@value, context=@context,
+    tlp=@tlp, source=@source, updated_at=@updated_at WHERE id=@id
+  `),
+  deleteIOC: db.prepare(`DELETE FROM iocs_library WHERE id = ?`),
+  countIOCs: db.prepare(`SELECT COUNT(*) as count FROM iocs_library`),
+
+  // Detections Library
+  getAllDetections: db.prepare(`SELECT * FROM detections_library ORDER BY created_at DESC`),
+  getDetectionById: db.prepare(`SELECT * FROM detections_library WHERE id = ?`),
+  insertDetection: db.prepare(`
+    INSERT INTO detections_library (platform, title, rule, notes, created_at, updated_at)
+    VALUES (@platform, @title, @rule, @notes, @created_at, @updated_at)
+  `),
+  updateDetection: db.prepare(`
+    UPDATE detections_library SET platform=@platform, title=@title, rule=@rule,
+    notes=@notes, updated_at=@updated_at WHERE id=@id
+  `),
+  deleteDetection: db.prepare(`DELETE FROM detections_library WHERE id = ?`),
+  countDetections: db.prepare(`SELECT COUNT(*) as count FROM detections_library`),
 }
 
 // -- Serialisation helpers --
