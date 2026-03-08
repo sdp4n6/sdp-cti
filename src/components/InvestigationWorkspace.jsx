@@ -7,6 +7,12 @@ import { SEVERITY_CONFIG, STATUS_CONFIG, STATUSES } from "../data/constants.js"
 
 import NotesSection from "./sections/NotesSection.jsx";
 import SourcesSection from "./sections/SourcesSection.jsx";
+import ThreatActorsSection from "./sections/ThreatActorsSection.jsx";
+import MalwareSection from "./sections/MalwareSection.jsx";
+import IOCsSection from "./sections/IOCsSection.jsx";
+import DetectionsSection from "./sections/DetectionsSection.jsx"
+import TTPsSection from "./sections/TTPsSection.jsx";
+import ReportSection from "./sections/ReportSection.jsx";
  
 const EMPTY_WS = {
     notes: "", sources: [], malware: [], actors: [],
@@ -160,6 +166,12 @@ export default function InvestigationWorkspace({ investigation, onBack }) {
                     <>
                         {activeTab === "notes" && <NotesSection data={ws.notes} onChange={updateSection("notes")}/>}
                         {activeTab === "sources"    && <SourcesSection data={ws.sources} onChange={updateSection("sources")} />}
+                        {activeTab === "actors" && <ThreatActorsSection data={ws.actors} onChange={updateSection("actors")}/>} 
+                        {activeTab === "malware"    && <MalwareSection data={ws.malware} onChange={updateSection("malware")} />}
+                        {activeTab === "iocs"       && <IOCsSection data={ws.iocs} onChange={updateSection("iocs")} />}
+                        {activeTab === "detections" && <DetectionsSection data={ws.detections} onChange={updateSection("detections")} />}
+                        {activeTab === "ttps" && <TTPsSection/>}
+                        {activeTab === "report"     && <ReportSection inv={reportData} />}
                     </>
                 )}
              </div>
