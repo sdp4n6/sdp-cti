@@ -1,9 +1,12 @@
 import { ArrowLeft } from "lucide-react";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../utils/api.js"
 
 import { SEVERITY_CONFIG, STATUS_CONFIG, STATUSES } from "../data/constants.js"
+
+import NotesSection from "./sections/NotesSection.jsx";
+import SourcesSection from "./sections/SourcesSection.jsx";
  
 const EMPTY_WS = {
     notes: "", sources: [], malware: [], actors: [],
@@ -51,6 +54,22 @@ export default function InvestigationWorkspace({ investigation, onBack }) {
         return () => clearTimeout(t)
     }, [ws, investigation.id, loading])
 
+    // --- Section Updater ---
+    const updateSection = useCallback((key) => (value) => {
+        userMutated.current = true;
+        setWs(prev => ({ ...prev, [key]: value }))
+    }, [])
+
+    // --- Manual Save ---
+    async function handleSave() {
+        setSaveState("saving"); setSaveError(null)
+        try {
+        await api.workspaces.save(investigation.id, ws)
+        setSaveState("saved")
+        setTimeout(() => setSaveState("idle"), 2000)
+        } catch (err) { setSaveState("error"); setSaveError(err.message); }
+    }
+
     // --- Report Data ---
     const reportData = {
         ...investigation,
@@ -65,6 +84,19 @@ export default function InvestigationWorkspace({ investigation, onBack }) {
 
     const sevCfg    = SEVERITY_CONFIG[investigation.severity] || {}
     const statusCfg = STATUS_CONFIG[investigation.status]     || {}
+
+    const saveLabel = {
+        idle:   null,
+        saving: "Saving...",
+        saved:  "Saved",
+        error:  "Save failed",
+    }[saveState]
+
+    const saveLabelColor = {
+        saving: "var(--text-muted)",
+        saved:  "#34d399",
+        error:  "#f87171",
+    }[saveState]
 
     return(
         <div className="workspace">
@@ -119,8 +151,17 @@ export default function InvestigationWorkspace({ investigation, onBack }) {
             </div>
 
             {/* Content */}
-             <div className="ws-content">
-                {/* To be developed */}
+            <div className="ws-content">
+                {loading ? (
+                <p style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: 12 }}>
+                    Loading workspace...
+                </p>
+                ) : (
+                    <>
+                        {activeTab === "notes" && <NotesSection data={ws.notes} onChange={updateSection("notes")}/>}
+                        {activeTab === "sources"    && <SourcesSection data={ws.sources} onChange={updateSection("sources")} />}
+                    </>
+                )}
              </div>
         </div>
     )

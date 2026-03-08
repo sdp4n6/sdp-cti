@@ -275,9 +275,7 @@ function NewInvestigationModal({ onCreate, onClose }) {
         setLoading(true); setError(null)
         try {
         const now = new Date().toISOString();
-        const id  = `INV-${Date.now().toString(36).toUpperCase()}`;
         const inv = await api.investigations.create({
-            id,
             title:       form.title.trim(),
             type:        form.type,
             severity:    form.severity,

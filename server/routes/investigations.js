@@ -1,5 +1,5 @@
 import express from "express"
-import { db, stmts, deserializeInvestigation } from "../db.js"
+import { db, stmts, deserializeInvestigation, generateInvestigationId } from "../db.js"
 
 const router = express.Router()
 
@@ -18,11 +18,12 @@ router.get("/:id", (req, res) => {
 
 // --- POST /api/investigations ---
 router.post("/", (req, res) => {
-    const { id, title, type, severity, status, description, tags, createdAt, updatedAt } = req.body
-    if (!id || !title) {
-        return res.status(400).json({ error: "id and title are required" })
+    const { title, type, severity, status, description, tags, createdAt, updatedAt } = req.body
+    if (!title) {
+        return res.status(400).json({ error: "title is required" })
     }
 
+    const id  = generateInvestigationId()
     const now = new Date().toISOString()
     stmts.insertInvestigation.run({
         id,

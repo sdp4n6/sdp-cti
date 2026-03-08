@@ -41,6 +41,11 @@ db.exec(`
     updated_at       TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS investigation_counters (
+    year     TEXT PRIMARY KEY,
+    last_seq INTEGER NOT NULL DEFAULT 0
+  );
+
   CREATE INDEX IF NOT EXISTS idx_investigations_updated ON investigations(updated_at DESC);
   CREATE INDEX IF NOT EXISTS idx_investigations_severity ON investigations(severity);
   CREATE INDEX IF NOT EXISTS idx_investigations_status   ON investigations(status);
@@ -73,6 +78,17 @@ const stmts = {
 
   deleteInvestigation: db.prepare(`
     DELETE FROM investigations WHERE id = ?
+  `),
+
+  // Counters
+  getCounter: db.prepare(`
+    SELECT last_seq FROM investigation_counters WHERE year = ?
+  `),
+
+  upsertCounter: db.prepare(`
+    INSERT INTO investigation_counters (year, last_seq) VALUES (?, 1)
+    ON CONFLICT(year) DO UPDATE SET last_seq = last_seq + 1
+    RETURNING last_seq
   `),
 
   // Workspaces
@@ -126,4 +142,13 @@ function deserializeWorkspace(row) {
   };
 }
 
-export { db, stmts, deserializeInvestigation, deserializeWorkspace };
+// -- ID generation --
+
+function generateInvestigationId() {
+  const year = new String(new Date().getFullYear()).toString()
+  const row  = stmts.upsertCounter.get(year)
+  const seq  = String(row.last_seq).padStart(4, "0")
+  return `TRI-${year}-${seq}`
+}
+
+export { db, stmts, deserializeInvestigation, deserializeWorkspace, generateInvestigationId };
