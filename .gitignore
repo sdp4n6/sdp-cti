@@ -1,3 +1,9 @@
+.claude/
+
+server/data/*.db
+server/data/*.sqlite
+server/data/*.db-shm
+server/data/*.db-wal
 # Logs
 logs
 *.log
