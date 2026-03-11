@@ -37,9 +37,14 @@ export default function Sidebar({ collapsed, setCollapsed, active, setActive }) 
         })}
       </nav>
       <div className="sidebar-bottom">
-        <button className="nav-item" title={collapsed ? "Settings" : undefined}>
+        <button
+          className={`nav-item ${active === "settings" ? "nav-item--active" : ""}`}
+          onClick={() => setActive("settings")}
+          title={collapsed ? "Settings" : undefined}
+        >
           <Settings size={16} />
           {!collapsed && <span className="nav-label">Settings</span>}
+          {!collapsed && active === "settings" && <ChevronRight size={12} className="nav-chevron" />}
         </button>
         <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)}>
           {collapsed ? <Menu size={14} /> : <X size={14} />}

@@ -1,9 +1,9 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Edit3, X, Plus, Check, Download } from "lucide-react";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../utils/api.js"
 
-import { SEVERITY_CONFIG, STATUS_CONFIG, STATUSES } from "../data/constants.js"
+import { SEVERITY_CONFIG, STATUS_CONFIG, STATUSES, SEVERITIES, INV_TYPES } from "../data/constants.js"
 
 import NotesSection from "./sections/NotesSection.jsx";
 import SourcesSection from "./sections/SourcesSection.jsx";
@@ -19,12 +19,13 @@ const EMPTY_WS = {
     ttps: [], iocs: [], detections: [],
 }
 
-export default function InvestigationWorkspace({ investigation, onBack }) {
+export default function InvestigationWorkspace({ investigation, onBack, onUpdateInvestigation }) {
     const [ws,        setWs]        = useState(EMPTY_WS)
     const [loading,   setLoading]   = useState(true)
     const [activeTab, setActiveTab] = useState("notes")
     const [saveState, setSaveState] = useState("idle")
     const [saveError, setSaveError] = useState(null)
+    const [showEdit,  setShowEdit]  = useState(false)
     const userMutated = useRef(false)
 
     const TABS = [
@@ -104,6 +105,28 @@ export default function InvestigationWorkspace({ investigation, onBack }) {
         error:  "#f87171",
     }[saveState]
 
+    async function handleExportInvestigation() {
+        try {
+            const workspace = await api.workspaces.get(investigation.id).catch(() => ({}))
+            const payload = { investigation, workspace }
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url
+            a.download = `${investigation.id}-${investigation.title.replace(/\s+/g, "-").toLowerCase()}.json`
+            a.click()
+            URL.revokeObjectURL(url)
+        } catch {}
+    }
+
+    async function handleUpdateInvestigation(updates) {
+        try {
+            const updated = await api.investigations.update(investigation.id, updates)
+            if (onUpdateInvestigation) onUpdateInvestigation(updated)
+            setShowEdit(false)
+        } catch {}
+    }
+
     return(
         <div className="workspace">
             {/* Header */}
@@ -131,7 +154,20 @@ export default function InvestigationWorkspace({ investigation, onBack }) {
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    {/* FIll out export part */}
+                    {saveLabel && (
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: saveLabelColor }}>
+                            {saveLabel}
+                        </span>
+                    )}
+                    <button className="btn-save" onClick={handleSave} title="Save workspace">
+                        <Check size={12} /> Save
+                    </button>
+                    <button className="btn-save" onClick={handleExportInvestigation} title="Export investigation">
+                        <Download size={12} /> Export
+                    </button>
+                    <button className="btn-save" onClick={() => setShowEdit(true)} title="Edit investigation details">
+                        <Edit3 size={12} /> Edit
+                    </button>
                 </div>
             </div>
 
@@ -175,6 +211,115 @@ export default function InvestigationWorkspace({ investigation, onBack }) {
                     </>
                 )}
              </div>
+
+            {showEdit && (
+                <EditInvestigationModal
+                    investigation={investigation}
+                    onSave={handleUpdateInvestigation}
+                    onClose={() => setShowEdit(false)}
+                />
+            )}
+        </div>
+    )
+}
+
+// --- Edit Investigation Modal ---
+
+function EditInvestigationModal({ investigation, onSave, onClose }) {
+    const [form, setForm] = useState({
+        title: investigation.title || "",
+        type: investigation.type || INV_TYPES[0],
+        severity: investigation.severity || "Medium",
+        status: investigation.status || "Active",
+        description: investigation.description || "",
+        tags: (investigation.tags || []).join(", "),
+    })
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState(null)
+
+    function field(key) { return e => setForm(f => ({ ...f, [key]: e.target.value })) }
+
+    async function submit() {
+        if (!form.title.trim()) { setError("Title is required."); return }
+        setLoading(true); setError(null)
+        try {
+            await onSave({
+                title: form.title.trim(),
+                type: form.type,
+                severity: form.severity,
+                status: form.status,
+                description: form.description.trim(),
+                tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
+            })
+        } catch (err) { setError(err.message) }
+        finally { setLoading(false) }
+    }
+
+    return (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+            <div className="modal">
+                <div className="modal-header">
+                    <div>
+                        <p className="modal-eyebrow">EDIT INVESTIGATION</p>
+                        <h2 className="modal-title">Update Details</h2>
+                    </div>
+                    <button className="modal-close" onClick={onClose}><X size={14} /></button>
+                </div>
+                <div className="modal-body">
+                    {error && (
+                        <p className="field-error" style={{ background: "rgba(248,113,113,0.08)", padding: "8px 10px", borderRadius: "var(--radius)" }}>
+                            {error}
+                        </p>
+                    )}
+                    <div className="field">
+                        <label className="field-label">Title <span className="field-required">*</span></label>
+                        <input className="field-input" value={form.title} onChange={field("title")} />
+                    </div>
+                    <div className="field-row">
+                        <div className="field">
+                            <label className="field-label">Type</label>
+                            <div className="select-wrap">
+                                <select className="field-select" value={form.type} onChange={field("type")}>
+                                    {INV_TYPES.map(t => <option key={t}>{t}</option>)}
+                                </select>
+                                <span className="select-arrow">&#x25BE;</span>
+                            </div>
+                        </div>
+                        <div className="field">
+                            <label className="field-label">Severity</label>
+                            <div className="select-wrap">
+                                <select className="field-select" value={form.severity} onChange={field("severity")}>
+                                    {SEVERITIES.map(s => <option key={s}>{s}</option>)}
+                                </select>
+                                <span className="select-arrow">&#x25BE;</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="field">
+                        <label className="field-label">Status</label>
+                        <div className="select-wrap">
+                            <select className="field-select" value={form.status} onChange={field("status")}>
+                                {STATUSES.map(s => <option key={s}>{s}</option>)}
+                            </select>
+                            <span className="select-arrow">&#x25BE;</span>
+                        </div>
+                    </div>
+                    <div className="field">
+                        <label className="field-label">Description</label>
+                        <textarea className="field-textarea" value={form.description} onChange={field("description")} />
+                    </div>
+                    <div className="field">
+                        <label className="field-label">Tags <span className="field-optional">(comma-separated)</span></label>
+                        <input className="field-input" value={form.tags} onChange={field("tags")} />
+                    </div>
+                </div>
+                <div className="modal-footer">
+                    <button className="btn-ghost" onClick={onClose}>Cancel</button>
+                    <button className="btn-primary" onClick={submit} disabled={loading}>
+                        <Check size={14} /> {loading ? "Saving..." : "Save Changes"}
+                    </button>
+                </div>
+            </div>
         </div>
     )
 }

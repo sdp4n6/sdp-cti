@@ -1,8 +1,9 @@
 import {
     Plus, Search, Folder, X, ExternalLink, Trash2,
-    Clock, Tag, Upload, Download
+    Clock, Tag, Upload, Download, Check, AlertTriangle,
+    ChevronDown, ChevronRight, FileUp
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../utils/api";
 import { SEVERITIES, SEVERITY_CONFIG, STATUSES, INV_TYPES } from "../data/constants";
 
@@ -98,13 +99,13 @@ export default function InvestigationsPage({ onOpen }){
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
                     <button className="btn-export" onClick={handleExportAll} disabled={investigations.length === 0}>
-                        <Download size={13} /> Export All
+                        <Download size={14} /> Export All
                     </button>
                     <button className="btn-ghost" onClick={() => setShowImport(true)}>
-                        <Upload size={13} /> Import
+                        <Upload size={14} /> Import
                     </button>
                     <button className="btn-primary" onClick={() => setShowNew(true)}>
-                        <Plus size={13} /> New Investigation
+                        <Plus size={14} /> New Investigation
                     </button>
                 </div>
             </div>
@@ -211,7 +212,7 @@ export default function InvestigationsPage({ onOpen }){
                         {inv.tags?.length > 0 && (
                         <div className="inv-tags">
                             {inv.tags.slice(0, 4).map(tag => (
-                            <span className="inv-tag" key={tag}><Tag size={9} /> {tag}</span>
+                            <span className="inv-tag" key={tag}><Tag size={10} /> {tag}</span>
                             ))}
                             {inv.tags.length > 4 && (
                             <span className="inv-tag">+{inv.tags.length - 4}</span>
@@ -225,10 +226,10 @@ export default function InvestigationsPage({ onOpen }){
                         </div>
                         <div className="inv-actions" onClick={e => e.stopPropagation()}>
                             <button className="inv-action-btn inv-action-btn--open" onClick={() => onOpen(inv)}>
-                            <ExternalLink size={12} />
+                            <ExternalLink size={13} />
                             </button>
                             <button className="inv-action-btn inv-action-btn--delete" onClick={() => handleDelete(inv.id)}>
-                            <Trash2 size={12} />
+                            <Trash2 size={13} />
                             </button>
                         </div>
                         </div>
@@ -248,7 +249,7 @@ export default function InvestigationsPage({ onOpen }){
 
             {/* Import modal */}
             {showImport && (
-                <ImporModal
+                <ImportModal
                 existingInvestigations={investigations}
                 onImport={handleImport}
                 onClose={() => setShowImport(false)}
@@ -342,8 +343,242 @@ function NewInvestigationModal({ onCreate, onClose }) {
                 <div className="modal-footer">
                 <button className="btn-ghost" onClick={onClose}>Cancel</button>
                 <button className="btn-primary" onClick={submit} disabled={loading}>
-                    <Plus size={13} /> {loading ? "Creating..." : "Create"}
+                    <Plus size={14} /> {loading ? "Creating..." : "Create"}
                 </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// --- Export all investigations as JSON ---
+
+function exportAllJSON(investigations, workspaces) {
+    const payload = investigations.map((inv, i) => ({
+        investigation: inv,
+        workspace: workspaces[i] || {},
+    }))
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `sdpcti-export-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+}
+
+// --- Import modal ---
+
+function ImportModal({ existingInvestigations, onImport, onClose }) {
+    const [step, setStep] = useState("upload") // upload | preview | done
+    const [entries, setEntries] = useState([])
+    const [error, setError] = useState(null)
+    const [loading, setLoading] = useState(false)
+    const [expandedId, setExpandedId] = useState(null)
+    const fileRef = useRef(null)
+    const [dragOver, setDragOver] = useState(false)
+
+    const existingIds = new Set(existingInvestigations.map(i => i.id))
+
+    function parseFile(file) {
+        setError(null)
+        if (!file.name.endsWith(".json")) {
+            setError("Please select a .json file.")
+            return
+        }
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            try {
+                let data = JSON.parse(e.target.result)
+                // Support both array format and single object
+                if (!Array.isArray(data)) data = [data]
+                // Normalize: accept {investigation, workspace} or flat investigation objects
+                const normalized = data.map(item => {
+                    if (item.investigation) return item
+                    return { investigation: item, workspace: null }
+                })
+                if (normalized.length === 0) {
+                    setError("No investigations found in file.")
+                    return
+                }
+                // Validate each entry has at least id and title
+                for (const entry of normalized) {
+                    const inv = entry.investigation
+                    if (!inv.id || !inv.title) {
+                        setError(`Invalid entry: missing id or title.`)
+                        return
+                    }
+                }
+                setEntries(normalized)
+                setStep("preview")
+            } catch {
+                setError("Invalid JSON file. Could not parse.")
+            }
+        }
+        reader.readAsText(file)
+    }
+
+    function handleDrop(e) {
+        e.preventDefault()
+        setDragOver(false)
+        const file = e.dataTransfer.files?.[0]
+        if (file) parseFile(file)
+    }
+
+    function handleFileSelect(e) {
+        const file = e.target.files?.[0]
+        if (file) parseFile(file)
+    }
+
+    async function handleConfirmImport() {
+        setLoading(true)
+        setError(null)
+        try {
+            await onImport(entries)
+            setStep("done")
+        } catch (err) {
+            setError(err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const conflicts = entries.filter(e => existingIds.has(e.investigation.id))
+    const newEntries = entries.filter(e => !existingIds.has(e.investigation.id))
+
+    return (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+            <div className="modal modal--wide">
+                <div className="modal-header">
+                    <div>
+                        <p className="modal-eyebrow">IMPORT</p>
+                        <h2 className="modal-title">Import Investigations</h2>
+                    </div>
+                    <button className="modal-close" onClick={onClose}><X size={14} /></button>
+                </div>
+                <div className="modal-body">
+                    {error && (
+                        <div className="import-error-box">
+                            <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                            <p>{error}</p>
+                        </div>
+                    )}
+
+                    {step === "upload" && (
+                        <>
+                            <div
+                                className={`dropzone ${dragOver ? "dropzone--active" : ""}`}
+                                onClick={() => fileRef.current?.click()}
+                                onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+                                onDragLeave={() => setDragOver(false)}
+                                onDrop={handleDrop}
+                            >
+                                <FileUp size={28} className="dropzone-icon" />
+                                <p className="dropzone-label">
+                                    Drop a <code>.json</code> file here or click to browse
+                                </p>
+                                <p className="dropzone-sub">
+                                    Accepts SDPCTI export format (single or bulk)
+                                </p>
+                            </div>
+                            <input
+                                ref={fileRef}
+                                type="file"
+                                accept=".json"
+                                style={{ display: "none" }}
+                                onChange={handleFileSelect}
+                            />
+                        </>
+                    )}
+
+                    {step === "preview" && (
+                        <>
+                            <div className="import-summary">
+                                <FileUp size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                                <p className="import-summary-text">
+                                    <strong>{entries.length}</strong> investigation{entries.length !== 1 ? "s" : ""} found
+                                    {conflicts.length > 0 && (
+                                        <span className="import-conflict-count" style={{ marginLeft: 8 }}>
+                                            <AlertTriangle size={10} /> {conflicts.length} existing
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+
+                            {conflicts.length > 0 && (
+                                <div className="import-conflict-info">
+                                    <p>
+                                        {conflicts.length} investigation{conflicts.length !== 1 ? "s" : ""} already exist and will be updated with the imported data.
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="import-entry-list">
+                                {entries.map(entry => {
+                                    const inv = entry.investigation
+                                    const isConflict = existingIds.has(inv.id)
+                                    const isExpanded = expandedId === inv.id
+                                    return (
+                                        <div key={inv.id} className={`import-row ${isConflict ? "import-row--conflict" : "import-row--clean"}`}>
+                                            <div className="import-row-header" onClick={() => setExpandedId(isExpanded ? null : inv.id)}>
+                                                <div className="import-row-left">
+                                                    {isExpanded
+                                                        ? <ChevronDown size={12} className="import-chevron" />
+                                                        : <ChevronRight size={12} className="import-chevron" />
+                                                    }
+                                                    <span className="import-inv-title">{inv.title}</span>
+                                                    <span className="import-inv-id">{inv.id}</span>
+                                                </div>
+                                                {isConflict
+                                                    ? <span className="import-conflict-badge">Overwrite</span>
+                                                    : <span className="import-clean-badge"><Check size={10} /> New</span>
+                                                }
+                                            </div>
+                                            {isExpanded && (
+                                                <div className="import-row-detail">
+                                                    <span className="import-detail-item">Type: {inv.type || "—"}</span>
+                                                    <span className="import-detail-item">Severity: {inv.severity || "—"}</span>
+                                                    <span className="import-detail-item">Status: {inv.status || "—"}</span>
+                                                    {inv.tags?.length > 0 && (
+                                                        <span className="import-detail-item">Tags: {inv.tags.join(", ")}</span>
+                                                    )}
+                                                    {entry.workspace && (
+                                                        <span className="import-detail-item" style={{ color: "var(--accent)" }}>+ workspace data</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </>
+                    )}
+
+                    {step === "done" && (
+                        <div className="import-success">
+                            <div className="import-success-icon"><Check size={24} /></div>
+                            <p className="import-success-title">Import Complete</p>
+                            <p className="import-success-sub">
+                                {newEntries.length} new, {conflicts.length} updated
+                            </p>
+                        </div>
+                    )}
+                </div>
+                <div className="modal-footer">
+                    {step === "upload" && (
+                        <button className="btn-ghost" onClick={onClose}>Cancel</button>
+                    )}
+                    {step === "preview" && (
+                        <>
+                            <button className="btn-ghost" onClick={() => { setStep("upload"); setEntries([]); setError(null) }}>Back</button>
+                            <button className="btn-primary" onClick={handleConfirmImport} disabled={loading}>
+                                <Upload size={14} /> {loading ? "Importing..." : `Import ${entries.length}`}
+                            </button>
+                        </>
+                    )}
+                    {step === "done" && (
+                        <button className="btn-primary" onClick={onClose}>Done</button>
+                    )}
                 </div>
             </div>
         </div>

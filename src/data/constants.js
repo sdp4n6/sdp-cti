@@ -8,20 +8,49 @@ export const CSS_VARS = `
     --bg-hover:     #161f2c;
     --border:       rgba(255,255,255,0.06);
     --border-lit:   rgba(34,211,238,0.25);
-    --accent:       #22d3ee;
+    --accent:       #0891b2;
     --accent-dim:   rgba(34,211,238,0.10);
     --accent-glow:  rgba(34,211,238,0.06);
     --text-primary: #e2e8f0;
     --text-muted:   #b4c9bb;
     --text-dim:     #2d3748;
+    --code-bg:      #0a0d14;
+    --code-text:    #a5b4fc;
+    --shadow-overlay: rgba(0,0,0,0.7);
+    --shadow-lg:    rgba(0,0,0,0.5);
+    --shadow-md:    rgba(0,0,0,0.3);
+    --modal-border: rgba(255,255,255,0.1);
+    --hover-border: rgba(255,255,255,0.12);
     --font-ui:      'DM Sans', sans-serif;
     --font-display: 'Syne', sans-serif;
     --font-mono:    'IBM Plex Mono', monospace;
     --radius:       6px;
     --transition:   0.18s ease;
   }
+  [data-theme="light"] {
+    --bg-base:      #f5f7fa;
+    --bg-surface:   #ffffff;
+    --bg-panel:     #f0f2f5;
+    --bg-hover:     #e8eaed;
+    --border:       rgba(0,0,0,0.10);
+    --border-lit:   rgba(8,145,178,0.35);
+    --accent:       #0891b2;
+    --accent-dim:   rgba(8,145,178,0.10);
+    --accent-glow:  rgba(8,145,178,0.06);
+    --text-primary: #1a202c;
+    --text-muted:   #5a6b73;
+    --text-dim:     #cbd5e0;
+    --code-bg:      #f1f3f5;
+    --code-text:    #4338ca;
+    --shadow-overlay: rgba(0,0,0,0.35);
+    --shadow-lg:    rgba(0,0,0,0.15);
+    --shadow-md:    rgba(0,0,0,0.08);
+    --modal-border: rgba(0,0,0,0.12);
+    --hover-border: rgba(0,0,0,0.15);
+  }
   body { background: var(--bg-base); color: var(--text-primary); font-family: var(--font-ui); font-size: 13px; -webkit-font-smoothing: antialiased; }
   body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; opacity: 0.35; }
+  [data-theme="light"] body::before { opacity: 0.08; }
   ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; } ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
 `
 

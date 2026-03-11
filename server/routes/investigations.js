@@ -11,8 +11,8 @@ router.get("/", (req, res) => {
 
 // --- GET /api/investigations/:id ---
 router.get("/:id", (req, res) => {
-    const rows = stmts.getInvestigationById.get(req.params.id)
-    if (!rows) return res.status(404).json({ error: "Investigation not found" })
+    const row = stmts.getInvestigationById.get(req.params.id)
+    if (!row) return res.status(404).json({ error: "Investigation not found" })
     res.json(deserializeInvestigation(row))
 })
 
